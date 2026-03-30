@@ -3,18 +3,35 @@
 #include<fstream>
 #include<string>
 #include<iomanip>
+#include<vector>
 #include<boost/asio.hpp>
+#include"../SHELL/ShellManager.h"
 using boost::asio::ip::tcp;
 std::string FileName = "NAND.txt";
 
-enum class CommandType {
-	Write, Read
-};
-struct payload {
-	CommandType type;
-	int LBA;
-	int VALUE;
-};
+//enum class CommandType {
+//	Write, Read
+//};
+//struct payload {
+//	CommandType type;
+//	int LBA;
+//	int VALUE;
+//};
+
+
+std::vector<std::string> split(std::string& _s, char _deli)
+{
+	std::vector<std::string> rst;
+	std::istringstream istream(_s);
+	std::string buffer;
+
+	while (getline(istream, buffer, _deli))
+	{
+		rst.push_back(buffer);
+	}
+
+	return rst;
+}
 
 void MakeNand() {
 	std::fstream fout;
@@ -53,6 +70,29 @@ unsigned int Read(int LBA)
 	}
 	return ret;
 }
+
+bool Test(std::string TestFileName)
+{
+	std::ifstream fin;
+	fin.open(TestFileName);
+	std::string buf;
+	bool ret = true;
+	while (getline(fin, buf) && ret) {
+		std::vector<std::string> vec = split(buf, ' ');
+		if (vec[0] == "write")
+		{
+
+		}
+		else if (vec[0] == "read")
+		{
+
+		}
+	}
+}
+
+
+
+
 
 int main()
 {
