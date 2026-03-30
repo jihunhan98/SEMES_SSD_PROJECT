@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="SHELL/SHELL.vcxproj" Id="8bbfa0e9-e971-49d2-af19-168c0c866bb5" />
+  <Project Path="SSD_PROJECT/SSD_PROJECT.vcxproj" Id="96bce166-8d3b-4347-bdd7-5fdf3d9b1691" />
+</Solution>
