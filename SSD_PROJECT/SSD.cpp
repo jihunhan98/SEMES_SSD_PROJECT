@@ -88,7 +88,7 @@ int main()
 			tcp::socket socket(io);
 			acceptor.accept(socket);
 
-			std::cout << "Client connected\n";
+			//std::cout << "Client connected\n";
 
 			while (true) {
 				char data[1024] = {};
@@ -114,7 +114,7 @@ int main()
 				else if (vec[0] == "read")
 				{
 					result = Read(stoi(vec[1]));
-					std::cout << result << std::endl;
+					//std::cout << result << std::endl;
 				}
 				boost::asio::write(socket, boost::asio::buffer(result));
 			}

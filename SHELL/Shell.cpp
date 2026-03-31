@@ -132,6 +132,7 @@ int main()
 					commandResult = "INVALID COMMAND";
 				}
 				else {
+					fout << "exit" << std::endl;
 					return false;
 				}
 			}
@@ -142,6 +143,9 @@ int main()
 				}
 				else {
 					commandResult =
+						"Team : 3\n"
+						"Member : 한지훈, 김보성\n"
+						"각 명령어 사용법\n"
 						"help\n"
 						"write [LBA] [VALUE]\n"
 						"read [LBA]\n"
@@ -198,12 +202,13 @@ int main()
 						if (file.path().extension() != ".txt")
 							continue;
 						std::string fileName = file.path().stem().string();
-						if (fileName.find(inputName) == 0) {
+
+						if (fileName == inputName)
+						{
 							testFileName = fileName;
 							break;
 						}
-						else if (fileName == inputName)
-						{
+						else if (fileName.find(inputName) == 0 && inputName.back() == '_') {
 							testFileName = fileName;
 							break;
 						}
@@ -248,11 +253,6 @@ int main()
 
 							if (actualResult != expectedResult) {
 								isPass = false;
-								//if (debugMessage.empty()) {
-								//	debugMessage =
-								//		"expected => " + expectedResult +
-								//		"\nactual => " + actualResult;
-								//}
 							}
 						}
 
@@ -286,8 +286,7 @@ int main()
 						return ConvNumber(a) < ConvNumber(b);
 						});
 
-					std::ofstream outputFile("output.txt");
-					if (!outputFile.is_open()) {
+					if (!fout.is_open()) {
 						commandResult = "ERROR";
 					}
 					else {
