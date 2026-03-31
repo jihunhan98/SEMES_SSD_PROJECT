@@ -43,73 +43,46 @@ void MakeNand() {
 	fout.close();
 }
 
-bool Write(int LBA, int VALUE)
+std::string Write(int LBA, std::string VALUE)
 {
+	std::string ret = "ERROR";
 	std::fstream fout;
 	fout.open(FileName, std::ios::in | std::ios::out | std::ios::binary);
+	if (!fout.is_open())
+		return ret;
 	fout.seekp(LBA * 10);
-	fout << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << VALUE;
-	return true;
+	fout << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << VALUE.substr(2);
+	ret = "SUCCESS";
+	fout.close();
+	return ret;
+
 }
 
-unsigned int Read(int LBA)
+std::string Read(int LBA)
 {
 	std::ifstream fin;
 	std::string buf;
 	fin.open(FileName);
+	if (!fin.is_open())
+		return "ERROR";
 	fin.seekg(LBA * 10);
 	std::getline(fin, buf);
-	int ret = 0;
-	for (int i = 0; i < 8; i++)
-	{
-		ret *= 16;
-		if (isascii(buf[i]))
-			ret += buf[i] - '0';
-		else
-			ret += buf[i] = 'A' + 10;
-	}
+	std::string ret = "0x";
+	ret += buf;
 	return ret;
 }
-
-bool Test(std::string TestFileName)
-{
-	std::ifstream fin;
-	fin.open(TestFileName);
-	std::string buf;
-	bool ret = true;
-	while (getline(fin, buf) && ret) {
-		std::vector<std::string> vec = split(buf, ' ');
-		if (vec[0] == "write")
-		{
-
-		}
-		else if (vec[0] == "read")
-		{
-
-		}
-	}
-
-	return false;
-}
-
-
 
 int main()
 {
 	std::ifstream NAND(FileName);
 	if (!NAND.is_open())
 	{
-		std::cout << "파일 없음" << std::endl;
 		MakeNand();
 	}
-	else
-		std::cout << "파일 존재";
 	try {
 		boost::asio::io_context io;
 
 		tcp::acceptor acceptor(io, tcp::endpoint(tcp::v4(), 12345));
-
-		//std::cout << "Server started on port 12345\n";
 
 		while (true) {
 			tcp::socket socket(io);
@@ -125,16 +98,26 @@ int main()
 				size_t length = socket.read_some(boost::asio::buffer(data), ec);
 
 				if (ec == boost::asio::error::eof)
-					break; // 정상 종료
+					break;
 				else if (ec)
 					throw boost::system::system_error(ec);
 				std::cout << std::string(data, length) << std::endl;
 				// echo
 				// client에게 전송
-				boost::asio::write(socket, boost::asio::buffer(data, length));
+				std::string command(data);
+				std::vector<std::string> vec = split(command, ' ');
+				std::string result = "ERROR";
+				if (vec[0] == "write")
+				{
+					result = Write(stoi(vec[1]), vec[2]);
+				}
+				else if (vec[0] == "read")
+				{
+					result = Read(stoi(vec[1]));
+					std::cout << result;
+				}
+				boost::asio::write(socket, boost::asio::buffer(result));
 			}
-
-			//std::cout << "Client disconnected\n";
 		}
 	}
 	catch (std::exception& e) {
