@@ -23,9 +23,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ShellManager.cpp" />
-    <ClCompile Include="TestScript.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShellManager.h" />
@@ -41,6 +38,7 @@
     <Text Include="7_FullWriteThenSparseVerify.txt" />
     <Text Include="8_FullWriteOverwriteRegression.txt" />
     <Text Include="9_MixedValidAndInvalidSequence.txt" />
+    <Text Include="output.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

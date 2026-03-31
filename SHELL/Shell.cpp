@@ -77,6 +77,9 @@ unsigned long convertHexValue(const std::string& str)
 
 int main()
 {
+
+	std::ofstream fout("output.txt", std::ios::out | std::ios::app);
+
 	try {
 		boost::asio::io_context io;
 		tcp::socket socket(io);
@@ -89,13 +92,12 @@ int main()
 			char reply[1024] = {};
 			size_t length = socket.read_some(boost::asio::buffer(reply));
 			return std::string(reply, length);
-		};
+			};
 		std::function<bool(const std::string&, std::string&, bool)> processCommand;
 
 		processCommand = [&](const std::string& command, std::string& commandResult, bool printResult) -> bool {
 			std::string input_text = command;
 			std::vector<std::string> vec = split(input_text, ' ');
-
 			if (vec.empty() || vec[0].empty()) {
 				commandResult = "INVALID COMMAND";
 				return true;
@@ -128,6 +130,7 @@ int main()
 			else if (vec[0] == "exit") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
+
 					return true;
 				}
 				return false;
@@ -187,7 +190,23 @@ int main()
 					commandResult = "INVALID COMMAND";
 				}
 				else {
-					const std::string testFileName = vec[1];
+					std::string inputName = vec[1];
+					std::string testFileName;
+
+					for (auto& file : fs::directory_iterator(".")) {
+						if (file.path().extension() != ".txt")
+							continue;
+						std::string fileName = file.path().stem().string();
+						if (fileName.find(inputName) == 0) {
+							testFileName = fileName;
+							break;
+						}
+						else if (fileName == inputName)
+						{
+							testFileName = fileName;
+							break;
+						}
+					}
 					std::ifstream scriptFile(testFileName + ".txt");
 					if (!scriptFile.is_open()) {
 						commandResult = "ERROR";
@@ -228,11 +247,11 @@ int main()
 
 							if (actualResult != expectedResult) {
 								isPass = false;
-								if (debugMessage.empty()) {
-									debugMessage =
-										"expected => " + expectedResult +
-										"\nactual => " + actualResult;
-								}
+								//if (debugMessage.empty()) {
+								//	debugMessage =
+								//		"expected => " + expectedResult +
+								//		"\nactual => " + actualResult;
+								//}
 							}
 						}
 
@@ -240,6 +259,7 @@ int main()
 							? "[PASS] " + testFileName
 							: "[FAIL] " + testFileName;
 						if (!isPass && !debugMessage.empty()) {
+							fout << command << std::endl;
 							commandResult += "\n" + debugMessage;
 						}
 					}
@@ -281,7 +301,7 @@ int main()
 								commandResult += "\n";
 							}
 							commandResult += singleResult;
-							outputFile << singleResult << std::endl;
+							//outputFile << singleResult << std::endl;
 
 							if (singleResult.rfind("[FAIL] ", 0) == 0 || singleResult == "ERROR") {
 								break;
@@ -295,16 +315,22 @@ int main()
 				commandResult = "INVALID COMMAND";
 			}
 
-			if (printResult && !commandResult.empty()) {
+			if (printResult) {
 				std::cout << commandResult << std::endl;
+				if (!commandResult.empty())
+				{
+					fout << command << std::endl;
+					fout << commandResult << std::endl;
+				}
 			}
 
 			return true;
-		};
+			};
 
 		while (true)
 		{
 			std::string input_text;
+			std::cout << "shell> ";
 			std::getline(std::cin, input_text);
 			std::string commandResult;
 			if (!processCommand(input_text, commandResult, true)) {

@@ -114,7 +114,7 @@ int main()
 				else if (vec[0] == "read")
 				{
 					result = Read(stoi(vec[1]));
-					std::cout << result;
+					std::cout << result << std::endl;
 				}
 				boost::asio::write(socket, boost::asio::buffer(result));
 			}

@@ -1,3 +1,4 @@
+testall
 [PASS] 1_BoundaryLBAReadWrite
 [PASS] 2_OutOfRangeLBAReject
 [PASS] 3_InvalidValueFormatReject
@@ -8,3 +9,19 @@
 [PASS] 8_FullWriteOverwriteRegression
 [PASS] 9_MixedValidAndInvalidSequence
 [PASS] 10_InvalidCommandAndRecovery
+test 1_
+[PASS] 1_BoundaryLBAReadWrite
+test 2_
+[PASS] 2_OutOfRangeLBAReject
+test 3_
+[PASS] 3_InvalidValueFormatReject
+fullwrite 1
+ERROR
+fullwrite 1 1
+INVALID COMMAND
+fullwrite
+INVALID COMMAND
+write
+INVALID COMMAND
+help 1
+INVALID COMMAND
