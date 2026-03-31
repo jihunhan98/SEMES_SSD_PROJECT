@@ -103,7 +103,7 @@ int main()
 				return true;
 			}
 
-			if (vec[0] == "write") {
+			else if (vec[0] == "write") {
 				if (vec.size() != 3) {
 					commandResult = "INVALID COMMAND";
 				}
@@ -130,10 +130,10 @@ int main()
 			else if (vec[0] == "exit") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
-
-					return true;
 				}
-				return false;
+				else {
+					return false;
+				}
 			}
 
 			else if (vec[0] == "help") {
@@ -170,18 +170,19 @@ int main()
 			else if (vec[0] == "fullread") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
-					return true;
 				}
 
-				commandResult.clear();
-				for (int i = 0; i < 100; i++) {
-					std::string request = "read " + std::to_string(i);
-					std::string response = sendRequestAndReceive(request);
-					std::string lineResult = "LBA " + std::to_string(i) + " : " + response;
-					if (!commandResult.empty()) {
-						commandResult += "\n";
+				else {
+					commandResult.clear();
+					for (int i = 0; i < 100; i++) {
+						std::string request = "read " + std::to_string(i);
+						std::string response = sendRequestAndReceive(request);
+						std::string lineResult = "LBA " + std::to_string(i) + " : " + response;
+						if (!commandResult.empty()) {
+							commandResult += "\n";
+						}
+						commandResult += lineResult;
 					}
-					commandResult += lineResult;
 				}
 			}
 
