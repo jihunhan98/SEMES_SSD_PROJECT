@@ -88,9 +88,9 @@ bool Test(std::string TestFileName)
 
 		}
 	}
+
+	return false;
 }
-
-
 
 
 
@@ -115,7 +115,7 @@ int main()
 			tcp::socket socket(io);
 			acceptor.accept(socket);
 
-			//std::cout << "Client connected\n";
+			std::cout << "Client connected\n";
 
 			while (true) {
 				char data[1024] = {};
@@ -128,7 +128,7 @@ int main()
 					break; // 정상 종료
 				else if (ec)
 					throw boost::system::system_error(ec);
-				std::cout << data;
+				std::cout << std::string(data, length) << std::endl;
 				// echo
 				// client에게 전송
 				boost::asio::write(socket, boost::asio::buffer(data, length));

@@ -10,6 +10,8 @@ public:
 	std::string& ReadText(int lba) const;
 	void PrintInvalidCommand();
 	void PrintInformation();
+	void PrintError();
+	void PrintSuccess();
 
 	bool ValidateLba(const std::string s);
 	bool ValidateHexNumber(const std::string s);

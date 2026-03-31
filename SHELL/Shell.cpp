@@ -1,10 +1,12 @@
-﻿#include "ShellManager.h"
+#include "ShellManager.h"
 #include <string>
 #include <vector>
 #include <sstream>
+#include <boost/asio.hpp>
 
+using boost::asio::ip::tcp;
 
-std::vector<std::string> split(std:: string& _s, char _deli)
+std::vector<std::string> split(std::string& _s, char _deli)
 {
 	std::vector<std::string> rst;
 	std::istringstream istream(_s);
@@ -30,94 +32,123 @@ unsigned long convertHexValue(const std::string& str)
 
 int main()
 {
-	ShellManager _shellManager;
+	try {
+		boost::asio::io_context io;
+		tcp::socket socket(io);
+		socket.connect(tcp::endpoint(boost::asio::ip::make_address("127.0.0.1"), 12345));
 
-	while (true)
-	{
-		std::string input_text;
-		std::getline(std::cin, input_text);
-		std::vector<std::string> vec = split(input_text, ' ');
+		ShellManager _shellManager;
 
-		if (vec[0] == "write") {
-			if (vec.size() != 3 || !_shellManager.ValidateLba(vec[1]) 
-				|| !_shellManager.ValidateHexNumber(vec[2])) 
-			{
+		while (true)
+		{
+			std::string input_text;
+			std::getline(std::cin, input_text);
+			std::vector<std::string> vec = split(input_text, ' ');
+
+			if (vec.empty() || vec[0].empty()) {
 				_shellManager.PrintInvalidCommand();
 				continue;
 			}
 
-			//1. 성공
-			_shellManager.WriteText(std::stoi(vec[1]), vec[2]);
+			if (vec[0] == "write") {
+				if (vec.size() != 3) {
+					_shellManager.PrintInvalidCommand();
+				}
+				else if (!_shellManager.ValidateLba(vec[1]) || !_shellManager.ValidateHexNumber(vec[2])) {
+					_shellManager.PrintError();
+				}
+				else {
+					boost::asio::write(socket, boost::asio::buffer(input_text));
 
-			std::cout << "write 성공\n";
-		}
+					char reply[1024] = {};
+					size_t length = socket.read_some(boost::asio::buffer(reply));
+					std::cout << std::string(reply, length) << std::endl;
+				}
+			}
 
-		else if (vec[0] == "read") {
-			if (vec.size() != 2 || !_shellManager.ValidateLba(vec[1])) {
+			else if (vec[0] == "read") {
+				if (vec.size() != 2) {
+					_shellManager.PrintInvalidCommand();
+				}
+				else if (!_shellManager.ValidateLba(vec[1])) {
+					_shellManager.PrintError();
+				}
+				else {
+					boost::asio::write(socket, boost::asio::buffer(input_text));
+
+					char reply[1024] = {};
+					size_t length = socket.read_some(boost::asio::buffer(reply));
+					std::cout << std::string(reply, length) << std::endl;
+				}
+			}
+
+			else if (vec[0] == "exit") {
+				if (vec.size() != 1) {
+					_shellManager.PrintInvalidCommand();
+				}
+				return 0;
+			}
+
+			else if (vec[0] == "help") {
+				if (vec.size() != 1) {
+					_shellManager.PrintInvalidCommand();
+				}
+				else {
+					_shellManager.PrintInformation();
+				}
+			}
+
+			else if (vec[0] == "fullwrite") {
+				if (vec.size() != 2) {
+					_shellManager.PrintInvalidCommand();
+				}
+				else if (!_shellManager.ValidateHexNumber(vec[1])) {
+					_shellManager.PrintError();
+				}
+				else {
+					for (int i = 0; i < 100; i++) {
+						std::string request = "write " + std::to_string(i) + " " + vec[1];
+						boost::asio::write(socket, boost::asio::buffer(request));
+
+						char reply[1024] = {};
+						size_t length = socket.read_some(boost::asio::buffer(reply));
+						std::cout << std::string(reply, length) << std::endl;
+					}
+				}
+			}
+
+			else if (vec[0] == "fullread") {
+				if (vec.size() != 1) {
+					_shellManager.PrintInvalidCommand();
+					continue;
+				}
+
+				for (int i = 0; i < 100; i++) {
+					std::string request = "read " + std::to_string(i);
+					boost::asio::write(socket, boost::asio::buffer(request));
+
+					char reply[1024] = {};
+					size_t length = socket.read_some(boost::asio::buffer(reply));
+					std::cout << "LBA " << i << " : " << std::string(reply, length) << "\n";
+				}
+			}
+
+			else if (vec[0] == "test") {
+				if (vec.size() != 2) {
+					_shellManager.PrintInvalidCommand();
+				}
+				else {
+					_shellManager.PrintSuccess();
+				}
+			}
+
+			else {
 				_shellManager.PrintInvalidCommand();
-				continue;
 			}
-
-			_shellManager.ReadText(std::stoi(vec[1]));
-			std::cout << "read 성공\n";
-		}
-
-		else if (vec[0] == "exit") {
-			//1. 명령어 형식(인자 갯수)
-			if (vec.size() != 1) {
-				_shellManager.PrintInvalidCommand();
-			}
-			return 0;
-		}
-
-		else if (vec[0] == "help") {
-			//1. 명령어 형식(인자 갯수)
-			if (vec.size() != 1) {
-				_shellManager.PrintInvalidCommand();
-				continue;
-			}
-
-			_shellManager.PrintInformation();
-		}
-
-		else if (vec[0] == "fullwrite") {
-			//1. 명령어 형식(인자 갯수)
-			if (vec.size() != 2 || !_shellManager.ValidateHexNumber(vec[1])) {
-				_shellManager.PrintInvalidCommand();
-				continue;
-			}
-
-			for (int i = 0; i < 100; i++) {
-				_shellManager.WriteText(i, vec[1]);
-			}
-
-			std::cout << "SUCCESS\n";
-		}
-
-		else if (vec[0] == "fullread") {
-			//1. 명령어 형식(인자 갯수)
-			if (vec.size() != 1) {
-				_shellManager.PrintInvalidCommand();
-				continue;
-			}
-			for (int i = 0; i < 100; i++) {
-				std::cout << "LBA " << i << " : " << _shellManager.ReadText(i) << "\n";
-			}
-		}
-
-		else if (vec[0] == "test") {
-			//1. 명령어 형식(인자 갯수)
-			if (vec.size() != 2) {
-				_shellManager.PrintInvalidCommand();
-				continue;
-			}
-
-			std::cout << "test 성공\n";
-		}
-
-		else {
-			_shellManager.PrintInvalidCommand();
 		}
 	}
+	catch (std::exception& e) {
+		std::cerr << e.what() << std::endl;
+		return 1;
+	}
 }
-
