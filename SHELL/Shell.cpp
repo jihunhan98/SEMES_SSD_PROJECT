@@ -4,9 +4,13 @@
 #include <sstream>
 #include <fstream>
 #include <functional>
+#include <filesystem>
+#include <algorithm>
+#include <cctype>
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
+namespace fs = std::filesystem;
 
 std::vector<std::string> split(std::string& _s, char _deli)
 {
@@ -32,6 +36,33 @@ std::string joinTokens(const std::vector<std::string>& tokens, size_t start, siz
 		result += tokens[i];
 	}
 	return result;
+}
+
+int ConvNumber(const std::string& fileName)
+{
+	try {
+		size_t pos = fileName.find('_');
+		if (pos != std::string::npos) {
+			return std::stoi(fileName.substr(0, pos));
+		}
+	}
+	catch (...) {
+		return 0;
+	}
+	return 0;
+}
+
+bool isValidFormat(const std::string& name)
+{
+	size_t pos = name.find('_');
+	if (pos == std::string::npos || pos == 0) return false;
+
+	for (size_t i = 0; i < pos; ++i) {
+		if (!std::isdigit(static_cast<unsigned char>(name[i]))) {
+			return false;
+		}
+	}
+	return true;
 }
 
 unsigned long convertHexValue(const std::string& str)
@@ -67,18 +98,15 @@ int main()
 
 			if (vec.empty() || vec[0].empty()) {
 				commandResult = "INVALID COMMAND";
-				_shellManager.PrintInvalidCommand();
 				return true;
 			}
 
 			if (vec[0] == "write") {
 				if (vec.size() != 3) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 				}
 				else if (!_shellManager.ValidateLba(vec[1]) || !_shellManager.ValidateHexNumber(vec[2])) {
 					commandResult = "ERROR";
-					_shellManager.PrintError();
 				}
 				else {
 					commandResult = sendRequestAndReceive(input_text);
@@ -88,24 +116,18 @@ int main()
 			else if (vec[0] == "read") {
 				if (vec.size() != 2) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 				}
 				else if (!_shellManager.ValidateLba(vec[1])) {
 					commandResult = "ERROR";
-					_shellManager.PrintError();
 				}
 				else {
 					commandResult = sendRequestAndReceive(input_text);
-					if (printResult) {
-						std::cout << commandResult << std::endl;
-					}
 				}
 			}
 
 			else if (vec[0] == "exit") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 					return true;
 				}
 				return false;
@@ -114,30 +136,30 @@ int main()
 			else if (vec[0] == "help") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 				}
 				else {
-					commandResult = "HELP";
-					_shellManager.PrintInformation();
+					commandResult =
+						"help\n"
+						"write [LBA] [VALUE]\n"
+						"read [LBA]\n"
+						"fullwrite [VALUE]\n"
+						"fullread\n"
+						"test [FILE]\n"
+						"exit";
 				}
 			}
 
 			else if (vec[0] == "fullwrite") {
 				if (vec.size() != 2) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 				}
 				else if (!_shellManager.ValidateHexNumber(vec[1])) {
 					commandResult = "ERROR";
-					_shellManager.PrintError();
 				}
 				else {
 					for (int i = 0; i < 100; i++) {
 						std::string request = "write " + std::to_string(i) + " " + vec[1];
 						commandResult = sendRequestAndReceive(request);
-					}
-					if (printResult) {
-						std::cout << commandResult << std::endl;
 					}
 				}
 			}
@@ -145,7 +167,6 @@ int main()
 			else if (vec[0] == "fullread") {
 				if (vec.size() != 1) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 					return true;
 				}
 
@@ -158,42 +179,113 @@ int main()
 						commandResult += "\n";
 					}
 					commandResult += lineResult;
-					if (printResult) {
-						std::cout << lineResult << "\n";
-					}
 				}
 			}
 
 			else if (vec[0] == "test") {
 				if (vec.size() != 2) {
 					commandResult = "INVALID COMMAND";
-					_shellManager.PrintInvalidCommand();
 				}
 				else {
-					std::ifstream scriptFile(vec[1] + ".txt");
+					const std::string testFileName = vec[1];
+					std::ifstream scriptFile(testFileName + ".txt");
 					if (!scriptFile.is_open()) {
 						commandResult = "ERROR";
-						_shellManager.PrintError();
 					}
 					else {
+						bool isPass = true;
+						std::string debugMessage;
 						std::string scriptLine;
 						while (std::getline(scriptFile, scriptLine)) {
 							if (scriptLine.empty()) continue;
 							std::vector<std::string> scriptTokens = split(scriptLine, ' ');
 							if (scriptTokens.size() < 2) {
-								_shellManager.PrintInvalidCommand();
+								isPass = false;
+								if (debugMessage.empty()) {
+									debugMessage = "INVALID SCRIPT => " + scriptLine;
+								}
 								continue;
 							}
 
-							std::string expectedResult = scriptTokens.back();
-							std::string commandInput = joinTokens(scriptTokens, 0, scriptTokens.size() - 1);
-							std::string actualResult;
+							std::string expectedResult;
+							size_t commandTokenEnd = scriptTokens.size() - 1;
+							if (scriptTokens.size() >= 2 &&
+								scriptTokens[scriptTokens.size() - 2] == "INVALID" &&
+								scriptTokens.back() == "COMMAND") {
+								expectedResult = "INVALID COMMAND";
+								commandTokenEnd = scriptTokens.size() - 2;
+							}
+							else {
+								expectedResult = scriptTokens.back();
+							}
 
+							std::string commandInput = joinTokens(scriptTokens, 0, commandTokenEnd);
+							std::string actualResult;
 
 							if (!processCommand(commandInput, actualResult, false)) {
 								return false;
 							}
 
+							if (actualResult != expectedResult) {
+								isPass = false;
+								if (debugMessage.empty()) {
+									debugMessage =
+										"expected => " + expectedResult +
+										"\nactual => " + actualResult;
+								}
+							}
+						}
+
+						commandResult = isPass
+							? "[PASS] " + testFileName
+							: "[FAIL] " + testFileName;
+						if (!isPass && !debugMessage.empty()) {
+							commandResult += "\n" + debugMessage;
+						}
+					}
+				}
+			}
+
+			else if (vec[0] == "testall") {
+				if (vec.size() != 1) {
+					commandResult = "INVALID COMMAND";
+				}
+				else {
+					std::vector<std::string> testFiles;
+					for (const auto& file : fs::directory_iterator(".")) {
+						if (file.path().extension() != ".txt") continue;
+
+						std::string fileName = file.path().stem().string();
+						if (isValidFormat(fileName)) {
+							testFiles.push_back(fileName);
+						}
+					}
+
+					std::sort(testFiles.begin(), testFiles.end(), [](const std::string& a, const std::string& b) {
+						return ConvNumber(a) < ConvNumber(b);
+						});
+
+					std::ofstream outputFile("output.txt");
+					if (!outputFile.is_open()) {
+						commandResult = "ERROR";
+					}
+					else {
+						commandResult.clear();
+						for (const auto& testFileName : testFiles) {
+							std::string singleResult;
+							if (!processCommand("test " + testFileName, singleResult, false)) {
+								return false;
+							}
+
+							if (!commandResult.empty()) {
+								commandResult += "\n";
+							}
+							commandResult += singleResult;
+							outputFile << singleResult << std::endl;
+
+							if (singleResult.rfind("[FAIL] ", 0) == 0 || singleResult == "ERROR") {
+								break;
+							}
 						}
 					}
 				}
@@ -201,7 +293,10 @@ int main()
 
 			else {
 				commandResult = "INVALID COMMAND";
-				_shellManager.PrintInvalidCommand();
+			}
+
+			if (printResult && !commandResult.empty()) {
+				std::cout << commandResult << std::endl;
 			}
 
 			return true;
