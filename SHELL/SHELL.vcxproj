@@ -19,11 +19,26 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Shell.cpp" />
+    <ClCompile Include="Shell.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ShellManager.cpp" />
+    <ClCompile Include="TestScript.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShellManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="10_InvalidCommandAndRecovery.txt" />
+    <Text Include="1_BoundaryLBAReadWrite.txt" />
+    <Text Include="2_OutOfRangeLBAReject.txt" />
+    <Text Include="3_InvalidValueFormatReject.txt" />
+    <Text Include="4_UnwrittenLBAReadZero.txt" />
+    <Text Include="5_OverwriteLastValueWins.txt" />
+    <Text Include="6_IsolationBetweenLBAs.txt" />
+    <Text Include="7_FullWriteThenSparseVerify.txt" />
+    <Text Include="8_FullWriteOverwriteRegression.txt" />
+    <Text Include="9_MixedValidAndInvalidSequence.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
