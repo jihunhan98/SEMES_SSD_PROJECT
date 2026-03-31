@@ -101,7 +101,7 @@ int main()
 					break;
 				else if (ec)
 					throw boost::system::system_error(ec);
-				std::cout << std::string(data, length) << std::endl;
+				//std::cout << std::string(data, length) << std::endl;
 				// echo
 				// client에게 전송
 				std::string command(data);
