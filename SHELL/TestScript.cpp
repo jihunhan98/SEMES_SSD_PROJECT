@@ -35,7 +35,7 @@ bool isValidFormat(const std::string& name) {
 	}
 	return true;
 }
-bool readScript(std::string& fileName)
+bool readScript(const std::string& fileName)
 {
 	std::string Path = fileName + ".txt";
 	std::ifstream file(Path);
@@ -50,9 +50,12 @@ bool readScript(std::string& fileName)
 		std::cout << buf << std::endl;
 	}
 	file.close();
+
+
 	return true;
 }
-int main() {
+
+void Initialize(const std::string& inputFileName) {
 	std::vector<std::string> fileList;
 	std::string txtSuffix = ".txt";
 
@@ -69,9 +72,6 @@ int main() {
 		return ConvNumber(a) < ConvNumber(b);
 		});
 
-	std::string inputFileName;
-	std::cin >> inputFileName;
-
 	bool fileExist = false;
 
 	for (auto& name : fileList) {
@@ -84,11 +84,7 @@ int main() {
 	}
 
 	if (fileExist && readScript(inputFileName))
-		std::cout << "있음";
-	else
-		std::cout << "없음";
+	{
 
-
-	return 0;
+	}
 }
-
